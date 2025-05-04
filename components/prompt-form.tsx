@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PromptFormData, Category, Tool, Prompt } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { promptsApi } from "@/lib/mock-data";
+import { useCreatePrompt, useUpdatePrompt } from "@/hooks/use-prompts";
 
 // Validation schema
 const promptSchema = z.object({
@@ -52,12 +52,16 @@ export default function PromptForm({ categories, tools, prompt, isEdit = false }
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Use React Query mutations
+  const createPrompt = useCreatePrompt();
+  const updatePrompt = useUpdatePrompt(prompt?.id || "");
+  
+  const isSubmitting = createPrompt.isPending || updatePrompt.isPending;
   
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     
     try {
       // Validate form data
@@ -65,40 +69,24 @@ export default function PromptForm({ categories, tools, prompt, isEdit = false }
       
       if (isEdit && prompt) {
         // Update existing prompt
-        await promptsApi.update(prompt.id, {
-          title: validatedData.title,
-          content: validatedData.content,
-          description: validatedData.description,
-          categories: categories.filter(c => validatedData.categoryIds.includes(c.id)),
-          tools: tools.filter(t => validatedData.toolIds.includes(t.id)),
-        });
-        
-        toast({
-          title: "Prompt atualizado",
-          description: "O prompt foi atualizado com sucesso!",
-          variant: "default",
+        updatePrompt.mutate(validatedData, {
+          onSuccess: () => {
+            router.push("/");
+            router.refresh();
+          }
         });
       } else {
         // Create new prompt
-        await promptsApi.create({
-          title: validatedData.title,
-          content: validatedData.content,
-          description: validatedData.description,
+        createPrompt.mutate({
+          ...validatedData,
           authorId: "1", // Mock user ID
-          categories: categories.filter(c => validatedData.categoryIds.includes(c.id)),
-          tools: tools.filter(t => validatedData.toolIds.includes(t.id)),
-        });
-        
-        toast({
-          title: "Prompt criado",
-          description: "O prompt foi criado com sucesso!",
-          variant: "default",
+        }, {
+          onSuccess: () => {
+            router.push("/");
+            router.refresh();
+          }
         });
       }
-      
-      // Redirect to prompts list
-      router.push("/");
-      router.refresh();
     } catch (error) {
       if (error instanceof z.ZodError) {
         const fieldErrors: Record<string, string> = {};
@@ -121,8 +109,6 @@ export default function PromptForm({ categories, tools, prompt, isEdit = false }
           variant: "destructive",
         });
       }
-    } finally {
-      setIsSubmitting(false);
     }
   };
   

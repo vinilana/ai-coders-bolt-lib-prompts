@@ -1,22 +1,26 @@
 "use client"
 
-import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PromptForm from "@/components/prompt-form";
-import { categoriesApi, toolsApi } from "@/lib/mock-data";
-import { Category, Tool } from "@/lib/types";
 import Link from "next/link";
+import { useCategories } from "@/hooks/use-categories";
+import { useTools } from "@/hooks/use-tools";
 
 export default function NewPromptPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [tools, setTools] = useState<Tool[]>([]);
+  // Use React Query hooks
+  const { data: categories, isLoading: isLoadingCategories } = useCategories();
+  const { data: tools, isLoading: isLoadingTools } = useTools();
   
-  useEffect(() => {
-    // Load categories and tools
-    setCategories(categoriesApi.getAll());
-    setTools(toolsApi.getAll());
-  }, []);
+  const isLoading = isLoadingCategories || isLoadingTools;
+  
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-[50vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">
@@ -31,8 +35,8 @@ export default function NewPromptPage() {
       </div>
       
       <PromptForm 
-        categories={categories}
-        tools={tools}
+        categories={categories || []}
+        tools={tools || []}
       />
     </div>
   );

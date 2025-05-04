@@ -1,50 +1,39 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PromptForm from "@/components/prompt-form";
-import { categoriesApi, toolsApi, promptsApi } from "@/lib/mock-data";
 import { Category, Tool, Prompt } from "@/lib/types";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
+import { usePrompt } from "@/hooks/use-prompts";
+import { useCategories } from "@/hooks/use-categories";
+import { useTools } from "@/hooks/use-tools";
 
 export default function EditPromptPage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
+  const id = params?.id as string;
   
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [tools, setTools] = useState<Tool[]>([]);
-  const [prompt, setPrompt] = useState<Prompt | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Use React Query hooks
+  const { data: prompt, isLoading: isLoadingPrompt, isError } = usePrompt(id);
+  const { data: categories, isLoading: isLoadingCategories } = useCategories();
+  const { data: tools, isLoading: isLoadingTools } = useTools();
   
-  // Carregar categorias e ferramentas apenas uma vez na montagem do componente
-  useEffect(() => {
-    setCategories(categoriesApi.getAll());
-    setTools(toolsApi.getAll());
-  }, []);
+  const isLoading = isLoadingPrompt || isLoadingCategories || isLoadingTools;
   
-  // Carregar o prompt quando o ID mudar
-  useEffect(() => {
-    const id = params?.id as string;
-    if (id) {
-      const promptData = promptsApi.getById(id);
-      if (promptData) {
-        setPrompt(promptData);
-      } else {
-        toast({
-          title: "Erro",
-          description: "Prompt não encontrado",
-          variant: "destructive",
-        });
-        router.push("/");
-      }
-    }
-    
-    setIsLoading(false);
-  }, [params?.id, router, toast]);
+  // Handle error
+  if (isError) {
+    toast({
+      title: "Erro",
+      description: "Prompt não encontrado",
+      variant: "destructive",
+    });
+    router.push("/");
+  }
   
   if (isLoading) {
     return (
@@ -81,8 +70,8 @@ export default function EditPromptPage() {
       </div>
       
       <PromptForm 
-        categories={categories}
-        tools={tools}
+        categories={categories || []}
+        tools={tools || []}
         prompt={prompt}
         isEdit={true}
       />

@@ -8,65 +8,39 @@ import PromptCard from "@/components/prompt-card";
 import PromptFilter from "@/components/prompt-filter";
 import Pagination from "@/components/pagination";
 import DeleteDialog from "@/components/delete-dialog";
-import { PaginatedResponse, FilterOptions, Prompt } from "@/lib/types";
-import { 
-  promptsApi, 
-  categoriesApi, 
-  toolsApi 
-} from "@/lib/mock-data";
+import { FilterOptions, Prompt } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+import { usePrompts, useDeletePrompt } from "@/hooks/use-prompts";
+import { useCategories } from "@/hooks/use-categories";
+import { useTools } from "@/hooks/use-tools";
 
 export default function Home() {
   const { toast } = useToast();
   
   // State
   const [isAdmin] = useState(true); // For demonstration, we'll assume user is admin
-  const [promptsData, setPromptsData] = useState<PaginatedResponse<Prompt>>({
-    items: [],
-    totalItems: 0,
-    currentPage: 1,
-    pageSize: 6,
-    totalPages: 0,
-  });
   
   const [filters, setFilters] = useState<FilterOptions>({
     page: 1,
     pageSize: 6,
   });
   
-  const [categories, setCategories] = useState(categoriesApi.getAll());
-  const [tools, setTools] = useState(toolsApi.getAll());
+  // Use React Query hooks
+  const { data: promptsData, isLoading: isLoadingPrompts } = usePrompts(filters);
+  const { data: categories, isLoading: isLoadingCategories } = useCategories();
+  const { data: tools, isLoading: isLoadingTools } = useTools();
+  
+  const deletePromptMutation = useDeletePrompt();
   
   // State for delete dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [promptToDelete, setPromptToDelete] = useState<Prompt | null>(null);
   
-  const loadPrompts = useCallback(() => {
-    const data = promptsApi.getAll(filters);
-    setPromptsData(data);
-  }, [filters]);
-  
-  // Load prompts when filters change
-  useEffect(() => {
-    loadPrompts();
-  }, [loadPrompts]);
-  
   // Handle delete
   const handleDelete = async (id: string) => {
     try {
-      const success = promptsApi.delete(id);
-      
-      if (success) {
-        toast({
-          title: "Prompt excluído",
-          description: "O prompt foi excluído com sucesso.",
-          variant: "default",
-        });
-        
-        loadPrompts();
-      } else {
-        throw new Error("Falha ao excluir o prompt");
-      }
+      deletePromptMutation.mutate(id);
+      setDeleteDialogOpen(false);
     } catch (error) {
       toast({
         title: "Erro",
@@ -78,7 +52,7 @@ export default function Home() {
   
   // Open delete confirmation dialog
   const openDeleteDialog = (id: string) => {
-    const prompt = promptsApi.getById(id);
+    const prompt = promptsData?.items.find(p => p.id === id);
     if (prompt) {
       setPromptToDelete(prompt);
       setDeleteDialogOpen(true);
@@ -111,6 +85,25 @@ export default function Home() {
     }));
   }, []);
   
+  // Loading state
+  if (isLoadingPrompts || isLoadingCategories || isLoadingTools) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Biblioteca de Prompts</h1>
+            <p className="text-muted-foreground mt-1">
+              Explore e gerencie prompts para suas ferramentas de IA favoritas.
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center p-12">
+          <p>Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -132,13 +125,13 @@ export default function Home() {
       </div>
       
       <PromptFilter
-        categories={categories}
-        tools={tools}
+        categories={categories || []}
+        tools={tools || []}
         onFilterChange={handleFilterChange}
         initialFilters={filters}
       />
       
-      {promptsData.items.length === 0 ? (
+      {!promptsData || promptsData.items.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-12 text-center">
           <div className="max-w-md">
             <h2 className="text-xl font-semibold">Nenhum prompt encontrado</h2>

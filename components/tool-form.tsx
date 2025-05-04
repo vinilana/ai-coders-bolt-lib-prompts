@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
-import { toolsApi } from "@/lib/mock-data";
+import { useCreateTool, useUpdateTool } from "@/hooks/use-tools";
 
 // Validation schema
 const toolSchema = z.object({
@@ -34,12 +34,16 @@ export default function ToolForm({ tool, isEdit = false }: ToolFormProps) {
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Use React Query mutations
+  const createTool = useCreateTool();
+  const updateTool = useUpdateTool(tool?.id || "");
+  
+  const isSubmitting = createTool.isPending || updateTool.isPending;
   
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     
     try {
       // Validate form data
@@ -47,27 +51,22 @@ export default function ToolForm({ tool, isEdit = false }: ToolFormProps) {
       
       if (isEdit && tool) {
         // Update existing tool
-        await toolsApi.update(tool.id, validatedData);
-        
-        toast({
-          title: "Ferramenta atualizada",
-          description: "A ferramenta foi atualizada com sucesso!",
-          variant: "default",
+        updateTool.mutate(validatedData, {
+          onSuccess: () => {
+            router.push("/tools");
+            router.refresh();
+          }
         });
       } else {
         // Create new tool
-        await toolsApi.create(validatedData);
-        
-        toast({
-          title: "Ferramenta criada",
-          description: "A ferramenta foi criada com sucesso!",
-          variant: "default",
+        createTool.mutate(validatedData, {
+          onSuccess: () => {
+            router.push("/tools");
+            router.refresh();
+          }
         });
       }
       
-      // Redirect to tools list
-      router.push("/tools");
-      router.refresh();
     } catch (error) {
       if (error instanceof z.ZodError) {
         const fieldErrors: Record<string, string> = {};
@@ -90,8 +89,6 @@ export default function ToolForm({ tool, isEdit = false }: ToolFormProps) {
           variant: "destructive",
         });
       }
-    } finally {
-      setIsSubmitting(false);
     }
   };
   

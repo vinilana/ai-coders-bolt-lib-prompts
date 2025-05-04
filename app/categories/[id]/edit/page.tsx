@@ -1,42 +1,31 @@
 "use client"
 
-import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import CategoryForm from "@/components/category-form";
-import { categoriesApi } from "@/lib/mock-data";
-import { Category } from "@/lib/types";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
+import { useCategory } from "@/hooks/use-categories";
 
 export default function EditCategoryPage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
+  const id = params?.id as string;
   
-  const [category, setCategory] = useState<Category | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Use React Query hook
+  const { data: category, isLoading, isError } = useCategory(id);
   
-  useEffect(() => {
-    // Load category
-    const id = params?.id as string;
-    if (id) {
-      const categoryData = categoriesApi.getById(id);
-      if (categoryData) {
-        setCategory(categoryData);
-      } else {
-        toast({
-          title: "Erro",
-          description: "Categoria não encontrada",
-          variant: "destructive",
-        });
-        router.push("/categories");
-      }
-    }
-    
-    setIsLoading(false);
-  }, [params?.id]);
+  // Handle error
+  if (isError) {
+    toast({
+      title: "Erro",
+      description: "Categoria não encontrada",
+      variant: "destructive",
+    });
+    router.push("/categories");
+  }
   
   if (isLoading) {
     return (

@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
-import { categoriesApi } from "@/lib/mock-data";
+import { useCreateCategory, useUpdateCategory } from "@/hooks/use-categories";
 
 // Validation schema
 const categorySchema = z.object({
@@ -34,12 +34,16 @@ export default function CategoryForm({ category, isEdit = false }: CategoryFormP
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Use React Query mutations
+  const createCategory = useCreateCategory();
+  const updateCategory = useUpdateCategory(category?.id || "");
+  
+  const isSubmitting = createCategory.isPending || updateCategory.isPending;
   
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     
     try {
       // Validate form data
@@ -47,27 +51,21 @@ export default function CategoryForm({ category, isEdit = false }: CategoryFormP
       
       if (isEdit && category) {
         // Update existing category
-        await categoriesApi.update(category.id, validatedData);
-        
-        toast({
-          title: "Categoria atualizada",
-          description: "A categoria foi atualizada com sucesso!",
-          variant: "default",
+        updateCategory.mutate(validatedData, {
+          onSuccess: () => {
+            router.push("/categories");
+            router.refresh();
+          }
         });
       } else {
         // Create new category
-        await categoriesApi.create(validatedData);
-        
-        toast({
-          title: "Categoria criada",
-          description: "A categoria foi criada com sucesso!",
-          variant: "default",
+        createCategory.mutate(validatedData, {
+          onSuccess: () => {
+            router.push("/categories");
+            router.refresh();
+          }
         });
       }
-      
-      // Redirect to categories list
-      router.push("/categories");
-      router.refresh();
     } catch (error) {
       if (error instanceof z.ZodError) {
         const fieldErrors: Record<string, string> = {};
@@ -90,8 +88,6 @@ export default function CategoryForm({ category, isEdit = false }: CategoryFormP
           variant: "destructive",
         });
       }
-    } finally {
-      setIsSubmitting(false);
     }
   };
   

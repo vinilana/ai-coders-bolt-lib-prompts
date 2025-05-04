@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash2 } from "lucide-react";
@@ -13,42 +13,24 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import DeleteDialog from "@/components/delete-dialog";
-import { categoriesApi } from "@/lib/mock-data";
 import { Category } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+import { useCategories, useDeleteCategory } from "@/hooks/use-categories";
 
 export default function CategoriesPage() {
   const { toast } = useToast();
   
   // State
   const [isAdmin] = useState(true); // For demonstration, we'll assume user is admin
-  const [categories, setCategories] = useState<Category[]>([]);
   
-  // Load categories
-  useEffect(() => {
-    loadCategories();
-  }, []);
-  
-  const loadCategories = () => {
-    setCategories(categoriesApi.getAll());
-  };
+  // Use React Query hooks
+  const { data: categories, isLoading } = useCategories();
+  const deleteCategory = useDeleteCategory();
   
   // Handle delete
   const handleDelete = async (id: string) => {
     try {
-      const success = categoriesApi.delete(id);
-      
-      if (success) {
-        toast({
-          title: "Categoria excluída",
-          description: "A categoria foi excluída com sucesso.",
-          variant: "default",
-        });
-        
-        loadCategories();
-      } else {
-        throw new Error("Falha ao excluir a categoria");
-      }
+      deleteCategory.mutate(id);
     } catch (error) {
       toast({
         title: "Erro",
@@ -57,6 +39,25 @@ export default function CategoriesPage() {
       });
     }
   };
+  
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Gerenciar Categorias</h1>
+            <p className="text-muted-foreground mt-1">
+              Crie e gerencie categorias para organizar os prompts.
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center p-12">
+          <p>Carregando...</p>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">
@@ -78,7 +79,7 @@ export default function CategoriesPage() {
         )}
       </div>
       
-      {categories.length === 0 ? (
+      {!categories || categories.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-12 text-center border rounded-lg">
           <div className="max-w-md">
             <h2 className="text-xl font-semibold">Nenhuma categoria encontrada</h2>

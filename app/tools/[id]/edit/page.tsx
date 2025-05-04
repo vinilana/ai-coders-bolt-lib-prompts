@@ -1,42 +1,31 @@
 "use client"
 
-import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ToolForm from "@/components/tool-form";
-import { toolsApi } from "@/lib/mock-data";
-import { Tool } from "@/lib/types";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
+import { useTool } from "@/hooks/use-tools";
 
 export default function EditToolPage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
+  const id = params?.id as string;
   
-  const [tool, setTool] = useState<Tool | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Use React Query hook
+  const { data: tool, isLoading, isError } = useTool(id);
   
-  useEffect(() => {
-    // Load tool
-    const id = params?.id as string;
-    if (id) {
-      const toolData = toolsApi.getById(id);
-      if (toolData) {
-        setTool(toolData);
-      } else {
-        toast({
-          title: "Erro",
-          description: "Ferramenta não encontrada",
-          variant: "destructive",
-        });
-        router.push("/tools");
-      }
-    }
-    
-    setIsLoading(false);
-  }, [params?.id]);
+  // Handle error
+  if (isError) {
+    toast({
+      title: "Erro",
+      description: "Ferramenta não encontrada",
+      variant: "destructive",
+    });
+    router.push("/tools");
+  }
   
   if (isLoading) {
     return (
