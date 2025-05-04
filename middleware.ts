@@ -7,17 +7,19 @@ const isProtectedRoute = createRouteMatcher([
   '/profile(.*)',
   // Add other protected routes here, but NOT auth routes
 ]);
+
 const isAdminRoute = createRouteMatcher(['/admin(.*)']);
+
+// Public route matcher
 const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
   '/sign-up(.*)',
-  '/api/(.*)' // Assuming API routes have their own protection
+  '/$',       // Home page
+  '/api/(.*)'
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
-  const path = new URL(request.url).pathname;
-  
-  // Skip protection for public routes
+  // Skip middleware for public routes and static assets
   if (isPublicRoute(request)) {
     return NextResponse.next();
   }
@@ -30,7 +32,7 @@ export default clerkMiddleware(async (auth, request) => {
     }
   }
 
-  // Protege rotas do dashboard para usuários autenticados
+  // Protege rotas especificadas para usuários autenticados
   if (isProtectedRoute(request)) {
     const { userId } = await auth();
     if (!userId) {
@@ -38,9 +40,21 @@ export default clerkMiddleware(async (auth, request) => {
     }
   }
 
+  // Para outras rotas não especificadas explicitamente
+  const { userId } = await auth();
+  if (!userId) {
+    // Opcional: redirecionar para login para rotas não explicitamente marcadas como públicas
+    return NextResponse.redirect(new URL('/sign-in', request.url));
+  }
+
   return NextResponse.next();
 });
 
+// Ajuste o matcher para excluir assets estáticos corretamente
 export const config = {
-  matcher: ['/((?!.*\\.[\\w]+$|_next).*)', '/', '/(api|trpc)(.*)'],
+  matcher: [
+    // Exclude files with extensions like .jpg, .png, etc.
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.).*)',
+    '/',
+  ],
 }; 
