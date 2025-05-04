@@ -48,7 +48,7 @@ export const CategoryService = {
     });
 
     // Formatar resultado
-    return formatPaginatedResponse(
+    return formatPaginatedResponse<any, Category>(
       categories, 
       totalItems, 
       page, 

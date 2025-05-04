@@ -79,7 +79,6 @@ export default function PromptForm({ categories, tools, prompt, isEdit = false }
         // Create new prompt
         createPrompt.mutate({
           ...validatedData,
-          authorId: "1", // Mock user ID
         }, {
           onSuccess: () => {
             router.push("/");

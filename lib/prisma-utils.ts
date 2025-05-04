@@ -52,10 +52,10 @@ export function buildPromptWhereClause(filters: FilterOptions): Prisma.PromptWhe
  * Utilitário para aplicar paginação a consultas Prisma
  */
 export function applyPagination<T>(
-  query: Prisma.PrismaPromise<T[]>,
+  query: any,
   page: number = 1,
   pageSize: number = 5
-): Prisma.PrismaPromise<T[]> {
+): any {
   const skip = (page - 1) * pageSize;
   return query.skip(skip).take(pageSize);
 }

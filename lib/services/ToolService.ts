@@ -48,7 +48,7 @@ export const ToolService = {
     });
 
     // Formatar resultado
-    return formatPaginatedResponse(
+    return formatPaginatedResponse<any, Tool>(
       tools, 
       totalItems, 
       page, 

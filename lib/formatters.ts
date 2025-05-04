@@ -24,7 +24,7 @@ export function formatCategory(category: any): Category {
   return {
     id: category.id,
     name: category.name,
-    description: category.description || undefined
+    description: category.description === null ? undefined : category.description
   };
 }
 
@@ -35,6 +35,6 @@ export function formatTool(tool: any): Tool {
   return {
     id: tool.id,
     name: tool.name,
-    description: tool.description || undefined
+    description: tool.description === null ? undefined : tool.description
   };
 } 

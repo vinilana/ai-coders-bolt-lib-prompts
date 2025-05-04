@@ -47,7 +47,9 @@ export default function PromptFilter({
   // Apply filters when they change
   useEffect(() => {
     // Adicionar verificação para evitar chamadas desnecessárias
-    if (filters.categoryIds?.length > 0 || filters.toolIds?.length > 0 || filters.searchTerm) {
+    if ((filters.categoryIds && filters.categoryIds.length > 0) || 
+        (filters.toolIds && filters.toolIds.length > 0) || 
+        filters.searchTerm) {
       onFilterChange(filters);
     }
   }, [filters, onFilterChange]);

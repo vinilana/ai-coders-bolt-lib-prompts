@@ -44,7 +44,7 @@ export const PromptService = {
     });
 
     // Usar função utilitária para formatar a resposta paginada
-    return formatPaginatedResponse(
+    return formatPaginatedResponse<any, Prompt>(
       prompts,
       totalItems,
       page,

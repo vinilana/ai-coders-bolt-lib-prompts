@@ -108,7 +108,7 @@ export default function ToolsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {tools.map((tool) => (
+              {tools.map((tool: Tool) => (
                 <TableRow key={tool.id}>
                   <TableCell className="font-medium">{tool.name}</TableCell>
                   <TableCell className="text-muted-foreground">
