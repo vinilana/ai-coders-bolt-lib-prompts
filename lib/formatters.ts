@@ -9,7 +9,6 @@ export function formatPrompt(prompt: any): Prompt {
     title: prompt.title,
     content: prompt.content,
     description: prompt.description || undefined,
-    authorId: prompt.authorId,
     createdAt: prompt.createdAt.toISOString(),
     updatedAt: prompt.updatedAt.toISOString(),
     deletedAt: prompt.deletedAt ? prompt.deletedAt.toISOString() : null,

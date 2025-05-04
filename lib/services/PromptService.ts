@@ -84,7 +84,6 @@ export const PromptService = {
     title: string;
     content: string;
     description?: string;
-    authorId: string;
     categoryIds: string[];
     toolIds: string[];
   }): Promise<Prompt> => {
@@ -96,7 +95,6 @@ export const PromptService = {
         title: data.title,
         content: data.content,
         description: data.description,
-        authorId: data.authorId,
         categories: {
           create: data.categoryIds.map(categoryId => ({
             categoryId

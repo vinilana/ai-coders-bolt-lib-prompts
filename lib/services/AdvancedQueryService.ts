@@ -129,55 +129,6 @@ export const AdvancedQueryService = {
   },
   
   /**
-   * Busca prompts por autor
-   */
-  getPromptsByAuthor: async (
-    authorId: string,
-    page: number = 1,
-    pageSize: number = 10
-  ): Promise<PaginatedResponse<Prompt>> => {
-    // Criar filtro básico por autor
-    const where = {
-      authorId,
-      deletedAt: null
-    };
-    
-    // Contar total de prompts do autor
-    const totalItems = await prisma.prompt.count({ where });
-    
-    // Buscar prompts do autor com paginação
-    const prompts = await prisma.prompt.findMany({
-      where,
-      include: {
-        categories: {
-          include: {
-            category: true
-          }
-        },
-        tools: {
-          include: {
-            tool: true
-          }
-        }
-      },
-      orderBy: {
-        updatedAt: 'desc'
-      },
-      skip: (page - 1) * pageSize,
-      take: pageSize
-    });
-    
-    // Formatar e retornar resultado paginado
-    return formatPaginatedResponse(
-      prompts, 
-      totalItems,
-      page,
-      pageSize,
-      formatPrompt
-    );
-  },
-  
-  /**
    * Realiza uma busca avançada em todas as entidades simultaneamente
    */
   searchAll: async (searchTerm: string): Promise<{

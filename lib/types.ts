@@ -4,7 +4,6 @@ export interface Prompt {
   title: string;
   content: string;
   description?: string;
-  authorId: string;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;
@@ -62,4 +61,5 @@ export interface FilterOptions {
   page?: number;
   pageSize?: number;
   searchTerm?: string;
+  title?: string;
 }

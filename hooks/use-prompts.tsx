@@ -59,15 +59,13 @@ export function usePrompt(id: string) {
   });
 }
 
-// Updated PromptFormData to include required authorId
-type PromptRequestData = PromptFormData & { authorId: string };
-
+// Use PromptFormData directly without adding authorId
 export function useCreatePrompt() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (data: PromptRequestData) => {
+    mutationFn: async (data: PromptFormData) => {
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

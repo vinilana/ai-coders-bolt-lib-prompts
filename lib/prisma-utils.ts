@@ -18,6 +18,11 @@ export function buildPromptWhereClause(filters: FilterOptions): Prisma.PromptWhe
     ];
   }
 
+  // Adicionar filtro por título específico
+  if (filters.title) {
+    where.title = { contains: filters.title, mode: 'insensitive' };
+  }
+
   // Adicionar filtro por categorias
   if (filters.categoryIds && filters.categoryIds.length > 0) {
     where.categories = {

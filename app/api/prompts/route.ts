@@ -14,10 +14,6 @@ export async function GET(request: Request) {
       filters.title = searchParams.get('title') || undefined;
     }
     
-    if (searchParams.has('authorId')) {
-      filters.authorId = searchParams.get('authorId') || undefined;
-    }
-    
     // Handle categoryIds as an array
     const categoryIds = searchParams.getAll('categoryIds');
     if (categoryIds.length > 0) {
@@ -58,9 +54,9 @@ export async function POST(request: Request) {
     const data = await request.json();
     
     // Validate required fields
-    if (!data.title || !data.content || !data.authorId) {
+    if (!data.title || !data.content) {
       return NextResponse.json(
-        { error: 'Title, content, and authorId are required' },
+        { error: 'Title and content are required' },
         { status: 400 }
       );
     }
