@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,12 +20,14 @@ export default function EditPromptPage() {
   const [prompt, setPrompt] = useState<Prompt | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
+  // Carregar categorias e ferramentas apenas uma vez na montagem do componente
   useEffect(() => {
-    // Load categories and tools
     setCategories(categoriesApi.getAll());
     setTools(toolsApi.getAll());
-    
-    // Load prompt
+  }, []);
+  
+  // Carregar o prompt quando o ID mudar
+  useEffect(() => {
     const id = params?.id as string;
     if (id) {
       const promptData = promptsApi.getById(id);
@@ -42,7 +44,7 @@ export default function EditPromptPage() {
     }
     
     setIsLoading(false);
-  }, [params?.id]);
+  }, [params?.id, router, toast]);
   
   if (isLoading) {
     return (

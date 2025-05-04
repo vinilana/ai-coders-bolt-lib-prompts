@@ -12,9 +12,9 @@ const Navbar = () => {
   const pathname = usePathname();
   
   // Close mobile menu when route changes
-  useEffect(() => {
-    setIsOpen(false);
-  }, [pathname]);
+  // useEffect(() => {
+  //   setIsOpen(false);
+  // }, [pathname]);
 
   const navLinks = [
     { title: "Prompts", href: "/" },

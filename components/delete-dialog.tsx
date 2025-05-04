@@ -20,6 +20,8 @@ interface DeleteDialogProps {
   description: string;
   onConfirm: () => Promise<void> | void;
   trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export default function DeleteDialog({
@@ -27,9 +29,15 @@ export default function DeleteDialog({
   description,
   onConfirm,
   trigger,
+  open,
+  onOpenChange,
 }: DeleteDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Use either controlled (external) or uncontrolled (internal) state
+  const isOpen = open !== undefined ? open : internalOpen;
+  const setIsOpen = onOpenChange || setInternalOpen;
   
   const handleConfirm = async () => {
     setIsDeleting(true);
@@ -38,19 +46,21 @@ export default function DeleteDialog({
       await onConfirm();
     } finally {
       setIsDeleting(false);
-      setOpen(false);
+      setIsOpen(false);
     }
   };
   
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger asChild>
-        {trigger || (
-          <Button variant="outline" size="icon">
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        )}
-      </AlertDialogTrigger>
+    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
+      {trigger && (
+        <AlertDialogTrigger asChild>
+          {trigger || (
+            <Button variant="outline" size="icon">
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </AlertDialogTrigger>
+      )}
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>

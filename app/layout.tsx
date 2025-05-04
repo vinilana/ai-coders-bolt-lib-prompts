@@ -9,16 +9,16 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Biblioteca de Prompts',
-  description: 'Uma biblioteca centralizada para gerenciamento de prompts',
+  description: 'Uma biblioteca centralizada para gerenciamento de prompts'
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider
           attribute="class"

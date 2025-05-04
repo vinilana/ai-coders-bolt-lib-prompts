@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -37,15 +37,19 @@ export default function Home() {
   const [categories, setCategories] = useState(categoriesApi.getAll());
   const [tools, setTools] = useState(toolsApi.getAll());
   
-  // Load prompts
-  useEffect(() => {
-    loadPrompts();
-  }, [filters]);
+  // State for delete dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [promptToDelete, setPromptToDelete] = useState<Prompt | null>(null);
   
-  const loadPrompts = () => {
+  const loadPrompts = useCallback(() => {
     const data = promptsApi.getAll(filters);
     setPromptsData(data);
-  };
+  }, [filters]);
+  
+  // Load prompts when filters change
+  useEffect(() => {
+    loadPrompts();
+  }, [loadPrompts]);
   
   // Handle delete
   const handleDelete = async (id: string) => {
@@ -72,31 +76,40 @@ export default function Home() {
     }
   };
   
+  // Open delete confirmation dialog
+  const openDeleteDialog = (id: string) => {
+    const prompt = promptsApi.getById(id);
+    if (prompt) {
+      setPromptToDelete(prompt);
+      setDeleteDialogOpen(true);
+    }
+  };
+  
   // Handle filter change
-  const handleFilterChange = (newFilters: FilterOptions) => {
+  const handleFilterChange = useCallback((newFilters: FilterOptions) => {
     setFilters(prev => ({
       ...prev,
       ...newFilters,
       page: 1, // Reset to first page when filters change
     }));
-  };
+  }, []);
   
   // Handle page change
-  const handlePageChange = (page: number) => {
+  const handlePageChange = useCallback((page: number) => {
     setFilters(prev => ({
       ...prev,
       page,
     }));
-  };
+  }, []);
   
   // Handle page size change
-  const handlePageSizeChange = (pageSize: number) => {
+  const handlePageSizeChange = useCallback((pageSize: number) => {
     setFilters(prev => ({
       ...prev,
       pageSize,
       page: 1, // Reset to first page when page size changes
     }));
-  };
+  }, []);
   
   return (
     <div className="space-y-6">
@@ -153,16 +166,7 @@ export default function Home() {
                 key={prompt.id}
                 prompt={prompt}
                 isAdmin={isAdmin}
-                onDelete={(id) => {
-                  const prompt = promptsApi.getById(id);
-                  return (
-                    <DeleteDialog
-                      title="Excluir Prompt"
-                      description={`Tem certeza que deseja excluir o prompt "${prompt?.title}"? Esta ação não pode ser desfeita.`}
-                      onConfirm={async () => handleDelete(id)}
-                    />
-                  );
-                }}
+                onDelete={openDeleteDialog}
               />
             ))}
           </div>
@@ -176,6 +180,17 @@ export default function Home() {
             onPageSizeChange={handlePageSizeChange}
           />
         </>
+      )}
+      
+      {/* Delete confirmation dialog */}
+      {promptToDelete && (
+        <DeleteDialog
+          title="Excluir Prompt"
+          description={`Tem certeza que deseja excluir o prompt "${promptToDelete.title}"? Esta ação não pode ser desfeita.`}
+          onConfirm={async () => handleDelete(promptToDelete.id)}
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+        />
       )}
     </div>
   );
