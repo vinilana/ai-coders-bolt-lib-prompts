@@ -1,6 +1,8 @@
 import { prisma } from './prisma';
-import { Tool } from '../types';
+import { Tool, PaginatedResponse } from '../types';
 import { v4 as uuidv4 } from 'uuid';
+import { formatPaginatedResponse, applyOrderBy } from '../prisma-utils';
+import { formatTool } from '../formatters';
 
 // Serviço para acesso a ferramentas
 export const ToolService = {
@@ -10,11 +12,49 @@ export const ToolService = {
       orderBy: { name: 'asc' }
     });
     
-    return tools.map(tool => ({
-      id: tool.id,
-      name: tool.name,
-      description: tool.description || undefined
-    }));
+    return tools.map(formatTool);
+  },
+  
+  // Obter ferramentas com paginação e busca
+  getAllPaginated: async (params: {
+    page?: number;
+    pageSize?: number;
+    searchTerm?: string;
+  } = {}): Promise<PaginatedResponse<Tool>> => {
+    const { 
+      page = 1, 
+      pageSize = 10,
+      searchTerm 
+    } = params;
+
+    // Construir condições de busca
+    const where: any = {};
+    if (searchTerm) {
+      where.OR = [
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { description: { contains: searchTerm, mode: 'insensitive' } }
+      ];
+    }
+
+    // Contar total de itens
+    const totalItems = await prisma.tool.count({ where });
+
+    // Buscar ferramentas com paginação
+    const tools = await prisma.tool.findMany({
+      where,
+      orderBy: applyOrderBy('name', 'asc'),
+      skip: (page - 1) * pageSize,
+      take: pageSize
+    });
+
+    // Formatar resultado
+    return formatPaginatedResponse(
+      tools, 
+      totalItems, 
+      page, 
+      pageSize, 
+      formatTool
+    );
   },
   
   // Obter ferramenta por ID
@@ -25,11 +65,7 @@ export const ToolService = {
     
     if (!tool) return null;
     
-    return {
-      id: tool.id,
-      name: tool.name,
-      description: tool.description || undefined
-    };
+    return formatTool(tool);
   },
   
   // Criar nova ferramenta
@@ -42,11 +78,7 @@ export const ToolService = {
       }
     });
     
-    return {
-      id: tool.id,
-      name: tool.name,
-      description: tool.description || undefined
-    };
+    return formatTool(tool);
   },
   
   // Atualizar ferramenta existente
@@ -57,11 +89,7 @@ export const ToolService = {
         data
       });
       
-      return {
-        id: tool.id,
-        name: tool.name,
-        description: tool.description || undefined
-      };
+      return formatTool(tool);
     } catch (error) {
       return null; // Ferramenta não encontrada ou erro ao atualizar
     }
@@ -78,4 +106,4 @@ export const ToolService = {
       return false; // Ferramenta não encontrada ou erro ao excluir
     }
   }
-}; 
+};

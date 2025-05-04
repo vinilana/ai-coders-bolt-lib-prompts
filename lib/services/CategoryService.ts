@@ -1,6 +1,8 @@
 import { prisma } from './prisma';
-import { Category } from '../types';
+import { Category, PaginatedResponse } from '../types';
 import { v4 as uuidv4 } from 'uuid';
+import { formatPaginatedResponse, applyOrderBy } from '../prisma-utils';
+import { formatCategory } from '../formatters';
 
 // Serviço para acesso a categorias
 export const CategoryService = {
@@ -10,11 +12,49 @@ export const CategoryService = {
       orderBy: { name: 'asc' }
     });
     
-    return categories.map(category => ({
-      id: category.id,
-      name: category.name,
-      description: category.description || undefined
-    }));
+    return categories.map(formatCategory);
+  },
+
+  // Obter categorias com paginação e busca
+  getAllPaginated: async (params: {
+    page?: number;
+    pageSize?: number;
+    searchTerm?: string;
+  } = {}): Promise<PaginatedResponse<Category>> => {
+    const { 
+      page = 1, 
+      pageSize = 10,
+      searchTerm 
+    } = params;
+
+    // Construir condições de busca
+    const where: any = {};
+    if (searchTerm) {
+      where.OR = [
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { description: { contains: searchTerm, mode: 'insensitive' } }
+      ];
+    }
+
+    // Contar total de itens
+    const totalItems = await prisma.category.count({ where });
+
+    // Buscar categorias com paginação
+    const categories = await prisma.category.findMany({
+      where,
+      orderBy: applyOrderBy('name', 'asc'),
+      skip: (page - 1) * pageSize,
+      take: pageSize
+    });
+
+    // Formatar resultado
+    return formatPaginatedResponse(
+      categories, 
+      totalItems, 
+      page, 
+      pageSize, 
+      formatCategory
+    );
   },
   
   // Obter categoria por ID
@@ -25,11 +65,7 @@ export const CategoryService = {
     
     if (!category) return null;
     
-    return {
-      id: category.id,
-      name: category.name,
-      description: category.description || undefined
-    };
+    return formatCategory(category);
   },
   
   // Criar nova categoria
@@ -42,11 +78,7 @@ export const CategoryService = {
       }
     });
     
-    return {
-      id: category.id,
-      name: category.name,
-      description: category.description || undefined
-    };
+    return formatCategory(category);
   },
   
   // Atualizar categoria existente
@@ -57,11 +89,7 @@ export const CategoryService = {
         data
       });
       
-      return {
-        id: category.id,
-        name: category.name,
-        description: category.description || undefined
-      };
+      return formatCategory(category);
     } catch (error) {
       return null; // Categoria não encontrada ou erro ao atualizar
     }

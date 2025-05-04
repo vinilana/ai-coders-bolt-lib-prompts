@@ -1,6 +1,12 @@
 import { prisma } from './prisma';
 import { Prompt, PaginatedResponse, FilterOptions } from '../types';
 import { v4 as uuidv4 } from 'uuid';
+import { 
+  buildPromptWhereClause, 
+  formatPaginatedResponse, 
+  applyOrderBy 
+} from '../prisma-utils';
+import { formatPrompt } from '../formatters';
 
 // Serviço para acesso a prompts
 export const PromptService = {
@@ -8,47 +14,11 @@ export const PromptService = {
   getAll: async (filters: FilterOptions = {}): Promise<PaginatedResponse<Prompt>> => {
     const {
       page = 1,
-      pageSize = 5,
-      categoryIds,
-      toolIds,
-      searchTerm
+      pageSize = 5
     } = filters;
 
-    // Construir as condições de filtro
-    const where: any = {
-      deletedAt: null, // Ignorar prompts excluídos
-    };
-
-    // Adicionar filtro por termo de busca
-    if (searchTerm) {
-      where.OR = [
-        { title: { contains: searchTerm, mode: 'insensitive' } },
-        { content: { contains: searchTerm, mode: 'insensitive' } },
-        { description: { contains: searchTerm, mode: 'insensitive' } }
-      ];
-    }
-
-    // Adicionar filtro por categorias
-    if (categoryIds && categoryIds.length > 0) {
-      where.categories = {
-        some: {
-          categoryId: {
-            in: categoryIds
-          }
-        }
-      };
-    }
-
-    // Adicionar filtro por ferramentas
-    if (toolIds && toolIds.length > 0) {
-      where.tools = {
-        some: {
-          toolId: {
-            in: toolIds
-          }
-        }
-      };
-    }
+    // Construir as condições de filtro usando a função utilitária
+    const where = buildPromptWhereClause(filters);
 
     // Contar o total de itens com os filtros aplicados
     const totalItems = await prisma.prompt.count({ where });
@@ -68,43 +38,19 @@ export const PromptService = {
           }
         }
       },
-      orderBy: {
-        updatedAt: 'desc'
-      },
+      orderBy: applyOrderBy('updatedAt'),
       skip: (page - 1) * pageSize,
       take: pageSize
     });
 
-    // Transformar os resultados do Prisma para o formato da aplicação
-    const formattedPrompts: Prompt[] = prompts.map(prompt => ({
-      id: prompt.id,
-      title: prompt.title,
-      content: prompt.content,
-      description: prompt.description || undefined,
-      authorId: prompt.authorId,
-      createdAt: prompt.createdAt.toISOString(),
-      updatedAt: prompt.updatedAt.toISOString(),
-      deletedAt: prompt.deletedAt ? prompt.deletedAt.toISOString() : null,
-      categories: prompt.categories.map(pc => ({
-        id: pc.category.id,
-        name: pc.category.name,
-        description: pc.category.description || undefined
-      })),
-      tools: prompt.tools.map(pt => ({
-        id: pt.tool.id,
-        name: pt.tool.name,
-        description: pt.tool.description || undefined
-      }))
-    }));
-
-    // Retornar resposta paginada
-    return {
-      items: formattedPrompts,
+    // Usar função utilitária para formatar a resposta paginada
+    return formatPaginatedResponse(
+      prompts,
       totalItems,
-      currentPage: page,
+      page,
       pageSize,
-      totalPages: Math.ceil(totalItems / pageSize)
-    };
+      formatPrompt
+    );
   },
   
   // Obter prompt por ID
@@ -130,26 +76,7 @@ export const PromptService = {
     
     if (!prompt) return null;
     
-    return {
-      id: prompt.id,
-      title: prompt.title,
-      content: prompt.content,
-      description: prompt.description || undefined,
-      authorId: prompt.authorId,
-      createdAt: prompt.createdAt.toISOString(),
-      updatedAt: prompt.updatedAt.toISOString(),
-      deletedAt: prompt.deletedAt ? prompt.deletedAt.toISOString() : null,
-      categories: prompt.categories.map(pc => ({
-        id: pc.category.id,
-        name: pc.category.name,
-        description: pc.category.description || undefined
-      })),
-      tools: prompt.tools.map(pt => ({
-        id: pt.tool.id,
-        name: pt.tool.name,
-        description: pt.tool.description || undefined
-      }))
-    };
+    return formatPrompt(prompt);
   },
   
   // Criar novo prompt
@@ -195,26 +122,7 @@ export const PromptService = {
       }
     });
     
-    return {
-      id: prompt.id,
-      title: prompt.title,
-      content: prompt.content,
-      description: prompt.description || undefined,
-      authorId: prompt.authorId,
-      createdAt: prompt.createdAt.toISOString(),
-      updatedAt: prompt.updatedAt.toISOString(),
-      deletedAt: prompt.deletedAt ? prompt.deletedAt.toISOString() : null,
-      categories: prompt.categories.map(pc => ({
-        id: pc.category.id,
-        name: pc.category.name,
-        description: pc.category.description || undefined
-      })),
-      tools: prompt.tools.map(pt => ({
-        id: pt.tool.id,
-        name: pt.tool.name,
-        description: pt.tool.description || undefined
-      }))
-    };
+    return formatPrompt(prompt);
   },
   
   // Atualizar prompt existente
@@ -304,26 +212,7 @@ export const PromptService = {
       if (!prompt) return null;
       
       // Transformar o resultado no formato da aplicação
-      return {
-        id: prompt.id,
-        title: prompt.title,
-        content: prompt.content,
-        description: prompt.description || undefined,
-        authorId: prompt.authorId,
-        createdAt: prompt.createdAt.toISOString(),
-        updatedAt: prompt.updatedAt.toISOString(),
-        deletedAt: prompt.deletedAt ? prompt.deletedAt.toISOString() : null,
-        categories: prompt.categories.map(pc => ({
-          id: pc.category.id,
-          name: pc.category.name,
-          description: pc.category.description || undefined
-        })),
-        tools: prompt.tools.map(pt => ({
-          id: pt.tool.id,
-          name: pt.tool.name,
-          description: pt.tool.description || undefined
-        }))
-      };
+      return formatPrompt(prompt);
     } catch (error) {
       console.error('Erro ao atualizar prompt:', error);
       return null;
