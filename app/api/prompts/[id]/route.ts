@@ -1,16 +1,13 @@
 import { NextResponse } from 'next/server';
 import { PromptService } from '@/lib/services/PromptService';
 
-interface RouteParams {
-  params: {
-    id: string;
-  };
-}
-
 // GET /api/prompts/[id] - Get a specific prompt
-export async function GET(request: Request, { params }: RouteParams) {
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const prompt = await PromptService.getById(id);
     
     if (!prompt) {
@@ -22,7 +19,7 @@ export async function GET(request: Request, { params }: RouteParams) {
     
     return NextResponse.json(prompt);
   } catch (error) {
-    console.error(`Error fetching prompt ${params.id}:`, error);
+    console.error(`Error fetching prompt ${(await params).id}:`, error);
     return NextResponse.json(
       { error: 'Failed to fetch prompt' },
       { status: 500 }
@@ -31,9 +28,12 @@ export async function GET(request: Request, { params }: RouteParams) {
 }
 
 // PATCH /api/prompts/[id] - Update a prompt
-export async function PATCH(request: Request, { params }: RouteParams) {
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const data = await request.json();
     
     const existingPrompt = await PromptService.getById(id);
@@ -47,7 +47,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     const updatedPrompt = await PromptService.update(id, data);
     return NextResponse.json(updatedPrompt);
   } catch (error) {
-    console.error(`Error updating prompt ${params.id}:`, error);
+    console.error(`Error updating prompt ${(await params).id}:`, error);
     return NextResponse.json(
       { error: 'Failed to update prompt' },
       { status: 500 }
@@ -56,9 +56,12 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 }
 
 // DELETE /api/prompts/[id] - Delete a prompt
-export async function DELETE(request: Request, { params }: RouteParams) {
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = params;
+    const { id } = await params;
     
     const existingPrompt = await PromptService.getById(id);
     if (!existingPrompt) {
@@ -74,7 +77,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
       { status: 200 }
     );
   } catch (error) {
-    console.error(`Error deleting prompt ${params.id}:`, error);
+    console.error(`Error deleting prompt ${(await params).id}:`, error);
     return NextResponse.json(
       { error: 'Failed to delete prompt' },
       { status: 500 }

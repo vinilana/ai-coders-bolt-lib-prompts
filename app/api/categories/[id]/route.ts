@@ -1,16 +1,13 @@
 import { NextResponse } from 'next/server';
 import { CategoryService } from '@/lib/services/CategoryService';
 
-interface RouteParams {
-  params: {
-    id: string;
-  };
-}
-
 // GET /api/categories/[id] - Get a specific category
-export async function GET(request: Request, { params }: RouteParams) {
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const category = await CategoryService.getById(id);
     
     if (!category) {
@@ -22,7 +19,7 @@ export async function GET(request: Request, { params }: RouteParams) {
     
     return NextResponse.json(category);
   } catch (error) {
-    console.error(`Error fetching category ${params.id}:`, error);
+    console.error(`Error fetching category ${(await params).id}:`, error);
     return NextResponse.json(
       { error: 'Failed to fetch category' },
       { status: 500 }
@@ -31,9 +28,12 @@ export async function GET(request: Request, { params }: RouteParams) {
 }
 
 // PATCH /api/categories/[id] - Update a category
-export async function PATCH(request: Request, { params }: RouteParams) {
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const data = await request.json();
     
     const existingCategory = await CategoryService.getById(id);
@@ -47,7 +47,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     const updatedCategory = await CategoryService.update(id, data);
     return NextResponse.json(updatedCategory);
   } catch (error) {
-    console.error(`Error updating category ${params.id}:`, error);
+    console.error(`Error updating category ${(await params).id}:`, error);
     return NextResponse.json(
       { error: 'Failed to update category' },
       { status: 500 }
@@ -56,9 +56,12 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 }
 
 // DELETE /api/categories/[id] - Delete a category
-export async function DELETE(request: Request, { params }: RouteParams) {
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = params;
+    const { id } = await params;
     
     const existingCategory = await CategoryService.getById(id);
     if (!existingCategory) {
@@ -74,7 +77,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
       { status: 200 }
     );
   } catch (error) {
-    console.error(`Error deleting category ${params.id}:`, error);
+    console.error(`Error deleting category ${(await params).id}:`, error);
     return NextResponse.json(
       { error: 'Failed to delete category' },
       { status: 500 }

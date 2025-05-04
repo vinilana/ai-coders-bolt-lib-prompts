@@ -1,16 +1,13 @@
 import { NextResponse } from 'next/server';
 import { ToolService } from '@/lib/services/ToolService';
 
-interface RouteParams {
-  params: {
-    id: string;
-  };
-}
-
 // GET /api/tools/[id] - Get a specific tool
-export async function GET(request: Request, { params }: RouteParams) {
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const tool = await ToolService.getById(id);
     
     if (!tool) {
@@ -22,7 +19,7 @@ export async function GET(request: Request, { params }: RouteParams) {
     
     return NextResponse.json(tool);
   } catch (error) {
-    console.error(`Error fetching tool ${params.id}:`, error);
+    console.error(`Error fetching tool ${(await params).id}:`, error);
     return NextResponse.json(
       { error: 'Failed to fetch tool' },
       { status: 500 }
@@ -31,9 +28,12 @@ export async function GET(request: Request, { params }: RouteParams) {
 }
 
 // PATCH /api/tools/[id] - Update a tool
-export async function PATCH(request: Request, { params }: RouteParams) {
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const data = await request.json();
     
     const existingTool = await ToolService.getById(id);
@@ -47,7 +47,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     const updatedTool = await ToolService.update(id, data);
     return NextResponse.json(updatedTool);
   } catch (error) {
-    console.error(`Error updating tool ${params.id}:`, error);
+    console.error(`Error updating tool ${(await params).id}:`, error);
     return NextResponse.json(
       { error: 'Failed to update tool' },
       { status: 500 }
@@ -56,9 +56,12 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 }
 
 // DELETE /api/tools/[id] - Delete a tool
-export async function DELETE(request: Request, { params }: RouteParams) {
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = params;
+    const { id } = await params;
     
     const existingTool = await ToolService.getById(id);
     if (!existingTool) {
@@ -74,7 +77,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
       { status: 200 }
     );
   } catch (error) {
-    console.error(`Error deleting tool ${params.id}:`, error);
+    console.error(`Error deleting tool ${(await params).id}:`, error);
     return NextResponse.json(
       { error: 'Failed to delete tool' },
       { status: 500 }
