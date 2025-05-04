@@ -1,0 +1,182 @@
+"use client"
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import PromptCard from "@/components/prompt-card";
+import PromptFilter from "@/components/prompt-filter";
+import Pagination from "@/components/pagination";
+import DeleteDialog from "@/components/delete-dialog";
+import { PaginatedResponse, FilterOptions, Prompt } from "@/lib/types";
+import { 
+  promptsApi, 
+  categoriesApi, 
+  toolsApi 
+} from "@/lib/mock-data";
+import { useToast } from "@/hooks/use-toast";
+
+export default function Home() {
+  const { toast } = useToast();
+  
+  // State
+  const [isAdmin] = useState(true); // For demonstration, we'll assume user is admin
+  const [promptsData, setPromptsData] = useState<PaginatedResponse<Prompt>>({
+    items: [],
+    totalItems: 0,
+    currentPage: 1,
+    pageSize: 6,
+    totalPages: 0,
+  });
+  
+  const [filters, setFilters] = useState<FilterOptions>({
+    page: 1,
+    pageSize: 6,
+  });
+  
+  const [categories, setCategories] = useState(categoriesApi.getAll());
+  const [tools, setTools] = useState(toolsApi.getAll());
+  
+  // Load prompts
+  useEffect(() => {
+    loadPrompts();
+  }, [filters]);
+  
+  const loadPrompts = () => {
+    const data = promptsApi.getAll(filters);
+    setPromptsData(data);
+  };
+  
+  // Handle delete
+  const handleDelete = async (id: string) => {
+    try {
+      const success = promptsApi.delete(id);
+      
+      if (success) {
+        toast({
+          title: "Prompt excluído",
+          description: "O prompt foi excluído com sucesso.",
+          variant: "default",
+        });
+        
+        loadPrompts();
+      } else {
+        throw new Error("Falha ao excluir o prompt");
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao excluir o prompt.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // Handle filter change
+  const handleFilterChange = (newFilters: FilterOptions) => {
+    setFilters(prev => ({
+      ...prev,
+      ...newFilters,
+      page: 1, // Reset to first page when filters change
+    }));
+  };
+  
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setFilters(prev => ({
+      ...prev,
+      page,
+    }));
+  };
+  
+  // Handle page size change
+  const handlePageSizeChange = (pageSize: number) => {
+    setFilters(prev => ({
+      ...prev,
+      pageSize,
+      page: 1, // Reset to first page when page size changes
+    }));
+  };
+  
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Biblioteca de Prompts</h1>
+          <p className="text-muted-foreground mt-1">
+            Explore e gerencie prompts para suas ferramentas de IA favoritas.
+          </p>
+        </div>
+        
+        {isAdmin && (
+          <Link href="/prompts/new">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Prompt
+            </Button>
+          </Link>
+        )}
+      </div>
+      
+      <PromptFilter
+        categories={categories}
+        tools={tools}
+        onFilterChange={handleFilterChange}
+        initialFilters={filters}
+      />
+      
+      {promptsData.items.length === 0 ? (
+        <div className="flex flex-col items-center justify-center p-12 text-center">
+          <div className="max-w-md">
+            <h2 className="text-xl font-semibold">Nenhum prompt encontrado</h2>
+            <p className="text-muted-foreground mt-2">
+              {filters.categoryIds?.length || filters.toolIds?.length || filters.searchTerm
+                ? "Tente ajustar os filtros para encontrar o que procura."
+                : "Comece criando seu primeiro prompt."}
+            </p>
+            
+            {isAdmin && (
+              <Link href="/prompts/new" className="mt-4 inline-block">
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Novo Prompt
+                </Button>
+              </Link>
+            )}
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {promptsData.items.map((prompt) => (
+              <PromptCard
+                key={prompt.id}
+                prompt={prompt}
+                isAdmin={isAdmin}
+                onDelete={(id) => {
+                  const prompt = promptsApi.getById(id);
+                  return (
+                    <DeleteDialog
+                      title="Excluir Prompt"
+                      description={`Tem certeza que deseja excluir o prompt "${prompt?.title}"? Esta ação não pode ser desfeita.`}
+                      onConfirm={async () => handleDelete(id)}
+                    />
+                  );
+                }}
+              />
+            ))}
+          </div>
+          
+          <Pagination
+            currentPage={promptsData.currentPage}
+            totalPages={promptsData.totalPages}
+            totalItems={promptsData.totalItems}
+            pageSize={promptsData.pageSize}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+          />
+        </>
+      )}
+    </div>
+  );
+}
