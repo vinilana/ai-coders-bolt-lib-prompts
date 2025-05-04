@@ -1,0 +1,103 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+// Modelo de usuário para autenticação e controle de acesso
+model User {
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  password  String    // Armazenará senha hash
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  prompts   Prompt[]  // Relação com os prompts criados pelo usuário
+
+  @@map("users")
+}
+
+// Modelo principal de Prompt
+model Prompt {
+  id          String    @id @default(uuid())
+  title       String
+  content     String    @db.Text    // Texto do prompt
+  description String?   @db.Text    // Campo opcional
+  authorId    String    @map("author_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")  // Para soft delete
+
+  // Relações
+  author      User              @relation(fields: [authorId], references: [id])
+  categories  PromptCategory[]
+  tools       PromptTool[]
+
+  @@index([authorId])
+  @@map("prompts")
+}
+
+// Modelo de Categoria
+model Category {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  
+  // Relação com prompts
+  prompts     PromptCategory[]
+
+  @@map("categories")
+}
+
+// Modelo de Ferramenta
+model Tool {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  
+  // Relação com prompts
+  prompts     PromptTool[]
+
+  @@map("tools")
+}
+
+// Tabela de junção entre Prompt e Category (many-to-many)
+model PromptCategory {
+  promptId    String    @map("prompt_id")
+  categoryId  String    @map("category_id")
+  
+  // Relações
+  prompt      Prompt    @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  
+  @@id([promptId, categoryId])
+  @@index([promptId])
+  @@index([categoryId])
+  @@map("prompt_categories")
+}
+
+// Tabela de junção entre Prompt e Tool (many-to-many)
+model PromptTool {
+  promptId    String    @map("prompt_id")
+  toolId      String    @map("tool_id")
+  
+  // Relações
+  prompt      Prompt    @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  tool        Tool      @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  
+  @@id([promptId, toolId])
+  @@index([promptId])
+  @@index([toolId])
+  @@map("prompt_tools")
+}
