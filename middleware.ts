@@ -5,8 +5,7 @@ import { NextResponse } from 'next/server';
 const isProtectedRoute = createRouteMatcher([
   '/dashboard(.*)',
   '/profile(.*)',
-  // Add other protected routes here, but NOT auth routes
-]);
+ ]);
 
 const isAdminRoute = createRouteMatcher(['/admin(.*)']);
 

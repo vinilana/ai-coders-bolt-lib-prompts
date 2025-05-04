@@ -63,3 +63,13 @@ export interface FilterOptions {
   searchTerm?: string;
   title?: string;
 }
+
+// User role types
+export type UserRole = 'admin' | 'user';
+
+export interface UserRoleClaims {
+  role?: UserRole;
+  metadata?: {
+    roles?: UserRole[];
+  }
+}

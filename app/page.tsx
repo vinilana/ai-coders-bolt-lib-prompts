@@ -13,12 +13,13 @@ import { useToast } from "@/hooks/use-toast";
 import { usePrompts, useDeletePrompt } from "@/hooks/use-prompts";
 import { useCategories } from "@/hooks/use-categories";
 import { useTools } from "@/hooks/use-tools";
+import { useUserRole } from "@/hooks/use-user-role";
 
 export default function Home() {
   const { toast } = useToast();
   
-  // State
-  const [isAdmin] = useState(true); // For demonstration, we'll assume user is admin
+  // Get user role
+  const { isAdmin, isAuthenticated } = useUserRole();
   
   const [filters, setFilters] = useState<FilterOptions>({
     page: 1,
@@ -52,7 +53,7 @@ export default function Home() {
   
   // Open delete confirmation dialog
   const openDeleteDialog = (id: string) => {
-    const prompt = promptsData?.items.find(p => p.id === id);
+    const prompt = promptsData?.items.find((p: Prompt) => p.id === id);
     if (prompt) {
       setPromptToDelete(prompt);
       setDeleteDialogOpen(true);
@@ -154,7 +155,7 @@ export default function Home() {
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {promptsData.items.map((prompt) => (
+            {promptsData.items.map((prompt: Prompt) => (
               <PromptCard
                 key={prompt.id}
                 prompt={prompt}
