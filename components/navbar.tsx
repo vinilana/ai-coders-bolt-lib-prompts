@@ -24,12 +24,12 @@ const Navbar = () => {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-2">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex justify-center">
+      <div className="container max-w-7xl w-full mx-auto flex h-16 items-center justify-between px-4">
+        <div className="flex items-center gap-4">
           <Link 
             href="/" 
-            className="flex items-center mr-6 text-xl font-bold tracking-tight hover:text-primary transition-colors"
+            className="flex items-center justify-center mr-4 text-xl font-bold tracking-tight hover:text-primary transition-colors"
           >
             Biblioteca de Prompts
           </Link>
@@ -39,7 +39,7 @@ const Navbar = () => {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`text-sm font-medium transition-colors hover:text-primary relative ${
+                className={`text-sm font-medium transition-colors hover:text-primary relative flex items-center ${
                   pathname === link.href
                     ? "text-foreground after:absolute after:bottom-[-20px] after:left-0 after:right-0 after:h-[3px] after:bg-primary after:rounded-full"
                     : "text-muted-foreground"
@@ -68,13 +68,13 @@ const Navbar = () => {
       
       {/* Mobile menu */}
       {isOpen && (
-        <div className="md:hidden border-t py-4 animate-in slide-in-from-top">
-          <nav className="container flex flex-col space-y-3">
+        <div className="md:hidden border-t py-4 animate-in slide-in-from-top w-full">
+          <nav className="container max-w-7xl mx-auto flex flex-col space-y-3 px-4">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-3 py-2 text-sm font-medium rounded-md transition-colors hover:bg-accent hover:text-accent-foreground ${
+                className={`px-3 py-2 text-sm font-medium rounded-md transition-colors hover:bg-accent hover:text-accent-foreground flex items-center ${
                   pathname === link.href
                     ? "bg-accent text-accent-foreground"
                     : "text-muted-foreground"
