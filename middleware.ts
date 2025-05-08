@@ -13,8 +13,14 @@ const isAdminRoute = createRouteMatcher(['/admin(.*)']);
 const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
   '/sign-up(.*)',
-  '/$',       // Home page
+  '/landing(.*)',  // Landing page is public
   '/api/(.*)'
+]);
+
+// Define authentication routes that shouldn't redirect to landing
+const isAuthRoute = createRouteMatcher([
+  '/sign-in(.*)',
+  '/sign-up(.*)',
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
@@ -35,15 +41,21 @@ export default clerkMiddleware(async (auth, request) => {
   if (isProtectedRoute(request)) {
     const { userId } = await auth();
     if (!userId) {
-      return NextResponse.redirect(new URL('/sign-in', request.url));
+      return NextResponse.redirect(new URL('/landing', request.url));
     }
   }
 
   // Para outras rotas não especificadas explicitamente
   const { userId } = await auth();
-  if (!userId) {
-    // Opcional: redirecionar para login para rotas não explicitamente marcadas como públicas
-    return NextResponse.redirect(new URL('/sign-in', request.url));
+  
+  // If the URL is root ("/"), redirect unauthenticated users to landing page
+  if (!userId && request.nextUrl.pathname === '/') {
+    return NextResponse.redirect(new URL('/landing', request.url));
+  }
+  
+  // For other routes, redirect to landing page if not authenticated (except auth routes)
+  if (!userId && !isAuthRoute(request)) {
+    return NextResponse.redirect(new URL('/landing', request.url));
   }
 
   return NextResponse.next();

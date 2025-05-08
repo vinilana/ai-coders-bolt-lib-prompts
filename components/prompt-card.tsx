@@ -1,145 +1,157 @@
 "use client"
 
 import { useState } from "react";
-import { Clock, Copy, Edit, Trash2, CheckCircle2 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Prompt } from "@/lib/types";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import Link from "next/link";
+import { 
+  Copy, 
+  Edit, 
+  MoreVertical, 
+  Trash, 
+  Check, 
+  ExternalLink, 
+  Star,
+  Sparkles
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter } from "next/navigation";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Prompt } from "@/lib/types";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 
 interface PromptCardProps {
   prompt: Prompt;
-  isAdmin?: boolean;
-  onDelete?: (id: string) => void;
+  isAdmin: boolean;
+  onDelete: (id: string) => void;
 }
 
-export default function PromptCard({ prompt, isAdmin = true, onDelete }: PromptCardProps) {
-  const [copied, setCopied] = useState(false);
+const PromptCard = ({ prompt, isAdmin, onDelete }: PromptCardProps) => {
   const { toast } = useToast();
-  const router = useRouter();
-  
-  const handleCopy = () => {
+  const [copied, setCopied] = useState(false);
+
+  // Copy prompt to clipboard
+  const copyToClipboard = () => {
     navigator.clipboard.writeText(prompt.content);
     setCopied(true);
     
     toast({
       title: "Copiado!",
       description: "O prompt foi copiado para a área de transferência.",
-      duration: 3000,
     });
     
-    setTimeout(() => setCopied(false), 2000);
-  };
-  
-  const handleEdit = () => {
-    router.push(`/prompts/${prompt.id}/edit`);
-  };
-  
-  const handleDelete = () => {
-    if (onDelete) {
-      onDelete(prompt.id);
-    }
-  };
-  
-  const formatDate = (dateString: string) => {
-    return formatDistanceToNow(new Date(dateString), { 
-      addSuffix: true,
-      locale: ptBR
-    });
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
   };
 
   return (
-    <Card className="h-full transition-all hover:shadow-md">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-xl flex justify-between">
-          <span className="truncate">{prompt.title}</span>
-        </CardTitle>
-        <div className="flex gap-1 flex-wrap mt-2">
-          {prompt.categories.map((category) => (
-            <Badge key={category.id} variant="secondary" className="mr-1 mb-1">
-              {category.name}
-            </Badge>
-          ))}
+    <Card className="card-hover overflow-hidden border border-border/60 bg-card/60 backdrop-blur-sm relative">
+      {/* Pill badge for top categories */}
+      {prompt.categories && prompt.categories.length > 0 && (
+        <div className="absolute top-3 right-3 z-10">
+          <Badge variant="outline" className="bg-primary/10 border-primary/20 text-primary">
+            {prompt.categories[0].name}
+          </Badge>
+        </div>
+      )}
+      
+      <CardHeader className="p-4 pb-0">
+        <div className="flex justify-between items-start">
+          <Link 
+            href={`/prompts/${prompt.id}`} 
+            className="text-lg font-semibold hover:text-primary transition-colors line-clamp-1 flex-1 group"
+          >
+            {prompt.featured && (
+              <Sparkles className="h-4 w-4 inline-block mr-1.5 text-amber-400" />
+            )}
+            <span className="group-hover:underline decoration-primary/30 underline-offset-4">
+              {prompt.title}
+            </span>
+          </Link>
+          
+          {isAdmin && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <MoreVertical className="h-4 w-4" />
+                  <span className="sr-only">Abrir menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link href={`/prompts/${prompt.id}/edit`}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Editar
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => onDelete(prompt.id)}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash className="h-4 w-4 mr-2" />
+                  Excluir
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </CardHeader>
-      <CardContent className="pb-3">
-        <div className="mb-4">
-          {prompt.description && (
-            <p className="text-sm text-muted-foreground mb-3">{prompt.description}</p>
-          )}
-          <div className="relative rounded-md bg-muted p-3 font-mono text-sm">
-            <pre className="max-h-52 overflow-y-auto whitespace-pre-wrap break-words">
-              {prompt.content}
-            </pre>
-          </div>
+      
+      <CardContent className="p-4">
+        <div className="text-muted-foreground text-sm line-clamp-3 mb-3 min-h-[4.5rem]">
+          {prompt.description}
         </div>
-        <div className="flex gap-2 flex-wrap mt-2">
-          {prompt.tools.map((tool) => (
-            <Badge key={tool.id} variant="outline" className="mr-1 mb-1">
+        
+        <div className="flex flex-wrap gap-2 mt-2">
+          {prompt.tools && prompt.tools.length > 0 && prompt.tools.map((tool) => (
+            <Badge key={tool.id} variant="secondary" className="bg-secondary/50">
               {tool.name}
             </Badge>
           ))}
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between pt-0">
-        <div className="flex items-center text-xs text-muted-foreground">
-          <Clock className="mr-1 h-3 w-3" />
-          <span>{formatDate(prompt.updatedAt)}</span>
+      
+      <CardFooter className="p-4 pt-0 flex justify-between items-center border-t border-border/30 mt-2">
+        <div className="flex items-center text-sm text-muted-foreground">
+          <Star className="h-4 w-4 text-amber-400 mr-1" />
+          <span>{prompt.rating || 4.5}</span>
         </div>
-        <div className="flex gap-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={handleCopy}>
-                  {copied ? (
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Copiar texto</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 border-primary/30 hover:bg-primary/10"
+            onClick={copyToClipboard}
+          >
+            {copied ? (
+              <Check className="h-3.5 w-3.5 mr-1 text-green-500" />
+            ) : (
+              <Copy className="h-3.5 w-3.5 mr-1" />
+            )}
+            Copiar
+          </Button>
           
-          {isAdmin && (
-            <>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={handleEdit}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Editar</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={handleDelete}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Excluir</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </>
-          )}
+          <Button 
+            variant="default" 
+            size="sm" 
+            className="h-8 glow-effect"
+            asChild
+          >
+            <Link href={`/prompts/${prompt.id}`}>
+              <ExternalLink className="h-3.5 w-3.5 mr-1" />
+              Abrir
+            </Link>
+          </Button>
         </div>
       </CardFooter>
     </Card>
   );
-}
+};
+
+export default PromptCard;

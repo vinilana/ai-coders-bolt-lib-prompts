@@ -1,7 +1,18 @@
-'use client';
+"use client";
 
-import { UserButton } from '@clerk/nextjs';
+import { UserButton as ClerkUserButton } from "@clerk/nextjs";
 
-export default function UserProfileButton() {
-  return <UserButton afterSignOutUrl="/" />;
-} 
+const UserProfileButton = () => {
+  return (
+    <ClerkUserButton 
+      appearance={{
+        elements: {
+          userButtonAvatarBox: "h-8 w-8 border-2 border-primary/30",
+          userButtonTrigger: "focus:shadow-none hover:opacity-80 transition-opacity"
+        }
+      }}
+    />
+  );
+};
+
+export default UserProfileButton; 
